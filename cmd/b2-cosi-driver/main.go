@@ -14,7 +14,7 @@ import (
 	b2client "github.com/bo0tzz/b2-cosi-driver/internal/b2"
 	"github.com/bo0tzz/b2-cosi-driver/pkg/identity"
 	"github.com/bo0tzz/b2-cosi-driver/pkg/provisioner"
-	cosi "sigs.k8s.io/container-object-storage-interface-spec"
+	cosi "sigs.k8s.io/container-object-storage-interface/proto"
 )
 
 const (

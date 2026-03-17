@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	cosi "sigs.k8s.io/container-object-storage-interface-spec"
+	cosi "sigs.k8s.io/container-object-storage-interface/proto"
 )
 
 func TestDriverGetInfo(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	b2client "github.com/bo0tzz/b2-cosi-driver/internal/b2"
-	cosi "sigs.k8s.io/container-object-storage-interface-spec"
+	cosi "sigs.k8s.io/container-object-storage-interface/proto"
 )
 
 // mockB2 is a test double for the B2 interface.
@@ -37,12 +37,15 @@ func (m *mockB2) DeleteApplicationKey(ctx context.Context, keyID string) error {
 	return m.deleteApplicationKey(ctx, keyID)
 }
 
+// Ensure mockB2 implements B2 interface at compile time.
+var _ B2 = (*mockB2)(nil)
+
 func TestDriverCreateBucket_New(t *testing.T) {
 	mock := &mockB2{
 		getBucketByName: func(_ context.Context, _ string) (string, string, bool, error) {
 			return "", "", false, nil
 		},
-		createBucket: func(_ context.Context, name string, public bool) (string, string, error) {
+		createBucket: func(_ context.Context, _ string, _ bool) (string, string, error) {
 			return "https://s3.us-west-004.backblazeb2.com", "us-west-004", nil
 		},
 	}
@@ -116,7 +119,7 @@ func TestDriverGrantBucketAccess(t *testing.T) {
 		getBucketByName: func(_ context.Context, _ string) (string, string, bool, error) {
 			return "https://s3.us-west-004.backblazeb2.com", "us-west-004", true, nil
 		},
-		createApplicationKey: func(_ context.Context, name, bucketName string, readOnly bool) (string, string, error) {
+		createApplicationKey: func(_ context.Context, _, _ string, _ bool) (string, string, error) {
 			return "keyID123", "keySecret456", nil
 		},
 	}
@@ -203,9 +206,7 @@ func TestDriverRevokeBucketAccess(t *testing.T) {
 
 func TestDriverRevokeBucketAccess_Idempotent(t *testing.T) {
 	mock := &mockB2{
-		deleteApplicationKey: func(_ context.Context, _ string) error {
-			return nil // already gone
-		},
+		deleteApplicationKey: func(_ context.Context, _ string) error { return nil },
 	}
 	srv := NewServer(mock)
 	_, err := srv.DriverRevokeBucketAccess(context.Background(), &cosi.DriverRevokeBucketAccessRequest{
@@ -217,8 +218,5 @@ func TestDriverRevokeBucketAccess_Idempotent(t *testing.T) {
 	}
 }
 
-// Ensure mockB2 implements B2 interface at compile time.
-var _ B2 = (*mockB2)(nil)
-
-// Ensure ErrBucketNotEmpty is accessible.
+// Keep a reference to ErrBucketNotEmpty to ensure the import is used.
 var _ = errors.Is(b2client.ErrBucketNotEmpty, b2client.ErrBucketNotEmpty)

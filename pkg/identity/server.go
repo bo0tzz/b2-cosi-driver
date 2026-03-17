@@ -3,11 +3,12 @@ package identity
 import (
 	"context"
 
-	cosi "sigs.k8s.io/container-object-storage-interface-spec"
+	cosi "sigs.k8s.io/container-object-storage-interface/proto"
 )
 
 // Server implements the COSI IdentityServer interface.
 type Server struct {
+	cosi.UnimplementedIdentityServer
 	name string
 }
 

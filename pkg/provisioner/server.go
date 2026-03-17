@@ -3,12 +3,13 @@ package provisioner
 import (
 	"context"
 	"errors"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/klog/v2"
 
 	b2client "github.com/bo0tzz/b2-cosi-driver/internal/b2"
-	cosi "sigs.k8s.io/container-object-storage-interface-spec"
+	cosi "sigs.k8s.io/container-object-storage-interface/proto"
 )
 
 // B2 is the interface the provisioner uses to interact with Backblaze B2.
@@ -23,6 +24,7 @@ type B2 interface {
 
 // Server implements the COSI ProvisionerServer interface.
 type Server struct {
+	cosi.UnimplementedProvisionerServer
 	b2 B2
 }
 
@@ -38,7 +40,6 @@ func (s *Server) DriverCreateBucket(ctx context.Context, req *cosi.DriverCreateB
 
 	public := req.Parameters["bucketType"] == "public"
 
-	// Idempotency: check if bucket already exists.
 	s3Endpoint, region, found, err := s.b2.GetBucketByName(ctx, req.Name)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "checking bucket existence: %v", err)
