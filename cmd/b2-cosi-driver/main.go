@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"net"
 	"os"
 	"os/signal"
@@ -24,6 +25,7 @@ const (
 
 func main() {
 	klog.InitFlags(nil)
+	flag.Parse()
 	klog.InfoS("starting B2 COSI driver", "driver", driverName)
 
 	endpoint := envOrDefault("COSI_ENDPOINT", defaultSocket)
