@@ -39,7 +39,7 @@ jobs:
         uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6
         with:
           images: |
-            name=ghcr.io/${{ github.repository_owner }}/thumbdump
+            name=ghcr.io/${{ github.repository_owner }}/b2-cosi-driver
 
       - name: Build and push image
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
