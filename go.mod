@@ -4,7 +4,7 @@ go 1.26.1
 
 require (
 	github.com/Backblaze/blazer v0.7.2
-	google.golang.org/grpc v1.79.2
+	google.golang.org/grpc v1.79.3
 	k8s.io/klog/v2 v2.140.0
 	sigs.k8s.io/container-object-storage-interface/proto v0.2.2
 )
