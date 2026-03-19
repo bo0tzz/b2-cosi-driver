@@ -25,8 +25,8 @@ kubectl -n b2-cosi-system create secret generic b2-credentials \
 Deploy the driver and RBAC:
 
 ```sh
-kubectl apply -f https://raw.githubusercontent.com/bo0tzz/b2-cosi-driver/v0.0.1/config/rbac.yaml
-kubectl apply -f https://raw.githubusercontent.com/bo0tzz/b2-cosi-driver/v0.0.1/config/deployment.yaml
+kubectl apply -f https://raw.githubusercontent.com/bo0tzz/b2-cosi-driver/v0.0.4/config/rbac.yaml
+kubectl apply -f https://raw.githubusercontent.com/bo0tzz/b2-cosi-driver/v0.0.4/config/deployment.yaml
 ```
 
 ## Usage
