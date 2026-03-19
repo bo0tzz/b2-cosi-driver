@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: b2-cosi-driver
-  namespace: default
+  namespace: b2-cosi-system
 spec:
   replicas: 1
   selector:
@@ -19,7 +19,7 @@ spec:
           emptyDir: {}
       containers:
         - name: objectstorage-sidecar
-          image: registry.k8s.io/sig-storage/objectstorage-sidecar:latest
+          image: registry.k8s.io/sig-storage/objectstorage-sidecar:v0.2.2
           volumeMounts:
             - name: cosi-socket
               mountPath: /var/lib/cosi

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: b2-cosi-driver
-  namespace: default
+  namespace: b2-cosi-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -25,7 +25,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: b2-cosi-driver
-    namespace: default
+    namespace: b2-cosi-system
 roleRef:
   kind: ClusterRole
   name: b2-cosi-driver
