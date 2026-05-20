@@ -88,7 +88,7 @@ func (c *Client) CreateApplicationKey(ctx context.Context, name, bucketName stri
 	if err != nil {
 		return "", "", fmt.Errorf("looking up bucket %q: %w", bucketName, err)
 	}
-	caps := []string{"readFiles", "listFiles", "listBuckets", "listFileVersions"}
+	caps := []string{"readFiles", "listFiles", "listBuckets"}
 	if !readOnly {
 		caps = append(caps, "writeFiles", "deleteFiles")
 	}
