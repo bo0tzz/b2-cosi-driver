@@ -83,7 +83,15 @@ func (c *Client) DeleteBucket(ctx context.Context, bucketName string) error {
 
 // CreateApplicationKey creates a scoped application key for the named bucket.
 // Capabilities are restricted to read-only or read-write based on readOnly.
+//
+// To satisfy COSI's idempotency contract on retried DriverGrantBucketAccess
+// calls, any pre-existing keys with the same name are deleted first. B2 only
+// returns a key's secret once at creation, so an existing same-named key is
+// unrecoverable for the caller — rotating it is the only way to converge.
 func (c *Client) CreateApplicationKey(ctx context.Context, name, bucketName string, readOnly bool) (keyID, keySecret string, err error) {
+	if err := c.deleteApplicationKeysByName(ctx, name); err != nil {
+		return "", "", fmt.Errorf("clearing stale keys for %q: %w", name, err)
+	}
 	bucket, err := c.b2.Bucket(ctx, bucketName)
 	if err != nil {
 		return "", "", fmt.Errorf("looking up bucket %q: %w", bucketName, err)
@@ -97,6 +105,30 @@ func (c *Client) CreateApplicationKey(ctx context.Context, name, bucketName stri
 		return "", "", fmt.Errorf("creating application key: %w", err)
 	}
 	return key.ID(), key.Secret(), nil
+}
+
+// deleteApplicationKeysByName removes every application key whose name matches.
+// B2 does not enforce name uniqueness, so all matches are deleted.
+func (c *Client) deleteApplicationKeysByName(ctx context.Context, name string) error {
+	cursor := ""
+	for {
+		keys, next, err := c.b2.ListKeys(ctx, 100, cursor)
+		for _, k := range keys {
+			if k.Name() != name {
+				continue
+			}
+			if delErr := k.Delete(ctx); delErr != nil {
+				return fmt.Errorf("deleting application key %q: %w", k.ID(), delErr)
+			}
+		}
+		if errors.Is(err, io.EOF) || next == "" {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("listing application keys: %w", err)
+		}
+		cursor = next
+	}
 }
 
 // DeleteApplicationKey deletes the application key with the given ID.
