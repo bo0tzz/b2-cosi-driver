@@ -44,13 +44,29 @@ func (c *Client) GetBucketByName(ctx context.Context, name string) (s3Endpoint, 
 	return s3Endpoint, region, true, nil
 }
 
+// LifecycleRule mirrors B2's lifecycle rule schema. Field names match the
+// public B2 API so users can copy rules straight from B2 documentation.
+type LifecycleRule struct {
+	FileNamePrefix            string `json:"fileNamePrefix"`
+	DaysFromUploadingToHiding int    `json:"daysFromUploadingToHiding,omitempty"`
+	DaysFromHidingToDeleting  int    `json:"daysFromHidingToDeleting,omitempty"`
+}
+
 // CreateBucket creates a B2 bucket (idempotent: returns existing bucket info if already present).
-func (c *Client) CreateBucket(ctx context.Context, name string, public bool) (s3Endpoint, region string, err error) {
+func (c *Client) CreateBucket(ctx context.Context, name string, public bool, rules []LifecycleRule) (s3Endpoint, region string, err error) {
 	var bType b2.BucketType = b2.Private
 	if public {
 		bType = b2.Public
 	}
-	bucket, err := c.b2.NewBucket(ctx, name, &b2.BucketAttrs{Type: bType})
+	attrs := &b2.BucketAttrs{Type: bType}
+	for _, r := range rules {
+		attrs.LifecycleRules = append(attrs.LifecycleRules, b2.LifecycleRule{
+			Prefix:                 r.FileNamePrefix,
+			DaysNewUntilHidden:     r.DaysFromUploadingToHiding,
+			DaysHiddenUntilDeleted: r.DaysFromHidingToDeleting,
+		})
+	}
+	bucket, err := c.b2.NewBucket(ctx, name, attrs)
 	if err != nil {
 		return "", "", fmt.Errorf("creating bucket %q: %w", name, err)
 	}

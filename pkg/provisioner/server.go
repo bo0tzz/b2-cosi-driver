@@ -2,7 +2,9 @@ package provisioner
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -16,7 +18,7 @@ import (
 // Defined here to allow test mocking.
 type B2 interface {
 	GetBucketByName(ctx context.Context, name string) (s3Endpoint, region string, found bool, err error)
-	CreateBucket(ctx context.Context, name string, public bool) (s3Endpoint, region string, err error)
+	CreateBucket(ctx context.Context, name string, public bool, rules []b2client.LifecycleRule) (s3Endpoint, region string, err error)
 	DeleteBucket(ctx context.Context, bucketName string) error
 	CreateApplicationKey(ctx context.Context, name, bucketName string, readOnly bool) (keyID, keySecret string, err error)
 	DeleteApplicationKey(ctx context.Context, keyID string) error
@@ -40,12 +42,17 @@ func (s *Server) DriverCreateBucket(ctx context.Context, req *cosi.DriverCreateB
 
 	public := req.Parameters["bucketType"] == "public"
 
+	rules, err := parseLifecycleRules(req.Parameters)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
 	s3Endpoint, region, found, err := s.b2.GetBucketByName(ctx, req.Name)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "checking bucket existence: %v", err)
 	}
 	if !found {
-		s3Endpoint, region, err = s.b2.CreateBucket(ctx, req.Name, public)
+		s3Endpoint, region, err = s.b2.CreateBucket(ctx, req.Name, public, rules)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "creating bucket: %v", err)
 		}
@@ -134,4 +141,27 @@ func (s *Server) DriverRevokeBucketAccess(ctx context.Context, req *cosi.DriverR
 
 	klog.V(2).InfoS("access revoked", "keyId", req.AccountId)
 	return &cosi.DriverRevokeBucketAccessResponse{}, nil
+}
+
+// parseLifecycleRules parses the lifecycleRules BucketClass parameter as a
+// JSON array matching B2's native rule shape. Returns nil if unset.
+//
+// Lifecycle rules are applied only when the bucket is first created. Editing
+// the parameter after the bucket is Ready has no effect; the COSI sidecar
+// stops calling DriverCreateBucket once Status.BucketReady is true.
+func parseLifecycleRules(params map[string]string) ([]b2client.LifecycleRule, error) {
+	raw := params["lifecycleRules"]
+	if raw == "" {
+		return nil, nil
+	}
+	var rules []b2client.LifecycleRule
+	if err := json.Unmarshal([]byte(raw), &rules); err != nil {
+		return nil, fmt.Errorf("lifecycleRules: %w", err)
+	}
+	for i, r := range rules {
+		if r.DaysFromUploadingToHiding == 0 && r.DaysFromHidingToDeleting == 0 {
+			return nil, fmt.Errorf("lifecycleRules[%d]: at least one of daysFromUploadingToHiding or daysFromHidingToDeleting must be > 0", i)
+		}
+	}
+	return rules, nil
 }

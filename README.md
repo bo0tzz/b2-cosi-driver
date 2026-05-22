@@ -76,3 +76,29 @@ spec:
 ```
 
 The driver will create a scoped B2 application key and store S3-compatible credentials in the `my-bucket-credentials` secret.
+
+## Parameters
+
+### `BucketClass.parameters`
+
+| Key              | Values     | Effect                                                                                                                                                                                       |
+| ---------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bucketType`     | `public`   | Create the bucket as public. Defaults to private.                                                                                                                                            |
+| `lifecycleRules` | JSON array | B2 lifecycle rules. Each element accepts `fileNamePrefix`, `daysFromUploadingToHiding`, `daysFromHidingToDeleting` — field names match the [B2 API](https://www.backblaze.com/apidocs/b2-update-bucket). At least one `days*` field must be > 0. |
+
+Lifecycle rules are applied only at bucket creation; editing the `BucketClass` after a bucket is Ready has no effect.
+
+The B2 dashboard's lifecycle radio buttons map onto `lifecycleRules` like this:
+
+| Dashboard option                        | `lifecycleRules` value                                                                          |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Keep all versions (default)             | _omit the parameter_                                                                            |
+| Keep only the last version              | `[{"daysFromHidingToDeleting": 1}]`                                                             |
+| Keep prior versions for *N* days        | `[{"daysFromHidingToDeleting": N}]`                                                             |
+| Custom                                  | _the same JSON the B2 API expects_                                                              |
+
+### `BucketAccessClass.parameters`
+
+| Key          | Values         | Effect                                                                                |
+| ------------ | -------------- | ------------------------------------------------------------------------------------- |
+| `accessMode` | `ro` / `read`  | Mint a read-only application key. Defaults to read-write.                              |
