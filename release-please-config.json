@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "go",
+  "include-component-in-tag": false,
+  "packages": {
+    ".": {
+      "package-name": "b2-cosi-driver",
+      "extra-files": [
+        "README.md",
+        "config/deployment.yaml"
+      ]
+    }
+  }
+}
